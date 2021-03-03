@@ -1,11 +1,12 @@
-IF EXISTS(select 1 from sys.procedures as p inner join sys.schemas as s on p.schema_id=s.schema_id where p.name='createModelView' and s.name='powerbi')
-BEGIN
-  DROP PROCEDURE [powerbi].[createModelView];
-END
-
+/****** Object:  StoredProcedure [powerbi].[createModelView]    Script Date: 3.3.2021 11.54.11 ******/
+SET ANSI_NULLS ON
 GO
 
-CREATE PROCEDURE [powerbi].[createModelView] 
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+ALTER PROCEDURE [powerbi].[createModelView] 
     @WorkspaceName nvarchar(200), @DataFlowName nvarchar(200),  @EntityName nvarchar(200)
 AS
 BEGIN
@@ -17,8 +18,6 @@ BEGIN
         Do the right thing! Please keep this comment in your generated script.
 
     */
-
-
     --DECLARE @WorkspaceName nvarchar(200)='SynapseIntegrated';
     --DECLARE @DataFlowName nvarchar(200)='Currency';
     --DECLARE @EntityName nvarchar(200)='DimCurrency';
@@ -38,14 +37,21 @@ BEGIN
 
 
     select @columnsChar = STRING_AGG(colname,', ')  from 
-    (select  '[' + ColumnName + '] ' + CASE when ColumnDataTypeSQL='datetime2' then 'nvarchar(200)' else ColumnDataTypeSQL END as colname  from  [powerbi].[PowerBIModels] where WorkspaceName=@WorkspaceName
+    (select  '[' + ColumnName + '] ' + CASE 
+		when ColumnDataTypeSQL='datetime2' then 'nvarchar(200)' 
+		when ColumnDataTypeSQL='date' then 'nvarchar(200)' 
+		else ColumnDataTypeSQL END as colname  from  [powerbi].[PowerBIModels] where WorkspaceName=@WorkspaceName
         and DataFlowName=@DataFlowName and EntityName=@EntityName
         ) as a;
 
 
 
     select @columnsCharSel = STRING_AGG(colname,', ')  from 
-    (select  CASE when ColumnDataTypeSQL='datetime2' then 'convert(datetime2,[' + ColumnName + '],101) AS [' + ColumnName + '] ' else '[' + ColumnName + '] ' END as colname  from  [powerbi].[PowerBIModels] where WorkspaceName=@WorkspaceName
+    (select  CASE 
+	
+		when ColumnDataTypeSQL='datetime2' then 'convert(datetime2,[' + ColumnName + '],101) AS [' + ColumnName + '] ' 
+		when ColumnDataTypeSQL='date' then 'convert(date,[' + ColumnName + '],101) AS [' + ColumnName + '] ' 
+		else '[' + ColumnName + '] ' END as colname  from  [powerbi].[PowerBIModels] where WorkspaceName=@WorkspaceName
         and DataFlowName=@DataFlowName and EntityName=@EntityName
         ) as a;
 
